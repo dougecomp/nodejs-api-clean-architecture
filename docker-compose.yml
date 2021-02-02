@@ -1,0 +1,53 @@
+version: "3"
+
+volumes: 
+  portainer_data:
+
+services:
+
+  # portainer:
+  #   image: portainer/portainer-ce
+  #   container_name: portainer
+  #   restart: always
+  #   ports: 
+  #     - 8000:8000
+  #     - 9000:9000
+  #   volumes:
+  #     - portainer_data:/data
+  #     - /var/run/docker.sock:/var/run/docker.sock
+
+  watchtower:
+    image: containrrr/watchtower
+    container_name: watchtower
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./containers/watchtower/config.json:/config.json
+    command: --interval 15 --cleanup --debug --label-enable
+
+  nginx:
+    image: nginx:1.19
+    expose:
+      - 16333
+    restart: always
+    ports:
+      - 16333:80
+    volumes:
+      - ./containers/nginx/nginx.conf:/etc/nginx/nginx.conf
+
+  app:
+    image: index.docker.io/goldenit/golden_api
+    labels: 
+      - com.centurylinklabs.watchtower.enable=true
+    environment:
+      - TZ=America/Sao_Paulo
+      - PORT=3001
+      - DB_CLIENT=mssql
+      - DB_USER=teste
+      - DB_PASSWORD=teste
+      - DB_HOST=goldenit.masterdaweb.net
+      - DB_PORT=49169
+      - DB_DATABASE=GoldenWeb
+      - AUTH_SECRET=G01d3nITLtd4-APIC0ntr01
+    depends_on:
+      - nginx
